@@ -1,0 +1,131 @@
+Language:
+
+Keywords:
+module
+export
+vertex
+fragment
+rasterize
+in
+for
+do
+while
+if
+Dict
+Object
+all type names below
+ref
+persistent
+position
+inherits
+
+Reserved Keywords
+function
+out
+Dictionary
+all future typenames below
+
+functions :
+  you declare functions with
+
+  <return type> module <identifier> (<argument list>)
+  {
+    //function body
+  }
+
+why module?  would “function” make more sense?
+
+calling functions
+c style function calls are ok.
+any argument to a function can have default arguments.
+you can use the names of the function arguments to set them in an arbitrary order
+  -eg func(color = red, spec = 0);
+dereferencing a dictionary in a function call (**dict) expands it to key0 = value0, key1=value1, … for every entry of the dictionary.
+dictionary key values used in a function call must be known or knowable at compile time
+  -valid : function( SPEC : variable1);
+  -invalid : function( KEY_VAR : 3);
+-any function call of the above types is valid so long as all arguments have an argument or default argument set.
+-functions can be overloaded.  while satisfying the above rules, and ambiguous overload is a compile error
+
+-functions can be declared inline, lambda style.  If so they automatically can see anything in the enclosing scope wherein the function was defined.
+
+
+-all function inputs are immutable
+  -What about efficiency?  "register renaming" type operations in the compiler will ensure that you don't copy an entire framebuffer for every draw call.
+
+-you add the keyword "export" before "module" to indicate to the compiler that code should be exported as an entrypoint for your engine.  This is essentially "main" for your program except you can have several of them.  Export functions are always CPU functions. The compiler uses these entrypoints to build dependency trees in the code and optimize things as much as possible.
+
+what about interoperability with existing code?
+  -RSL generates c++ entrypoints which can be called from an existing engine.  Because of the "stretchy" typing in RSL your engine might need conversions from bigger data structures to inputs to the RSL entrypoints.  You can change the struct definitions in the generated headers if conversion isn't practical.  Alternatively, an extension for @cpp code (in the same way as _asm in other langauges might be added to allow explicitly setting data structure layouts)
+
+Primitive Types:
+
+int
+uint
+half
+float
+byte
+ubyte
+short
+ushort
+double
+int64
+uint64
+
+Type modifiers:
+Pointers and arrays work identically to C++
+
+Basic Matrix and Vector Types:
+//M,N <= 4, >=2
+<primitiveType>MxN
+<primitiveType>M
+
+Special Types:
+image1d
+image2d
+image3d
+module #store module pointers inside of an object type.  allows switching materials, etc using same shader.  material.getNormal() call in fragment path
+Dict #key value pairs
+future extensions:
+imageNd (arbitrary dimension image, eg, for 4D perlin noise.)
+
+Future extensions
+<primitiveType>MxN //M,N >=2, <= max<size_t> //ar
+<primitiveType>M //M >=2, <= max<size_t> //arbitrarily sized vector
+<primitiveType>_matrix //runtimeSized based on constructor
+quaternion
+
+Object Types:
+
+“Stretchy” object types
+Object types compile to statically typed structs in C++ based off of visibility in the linked code.  You never explicitly set the layout of an object.  You just read and write object.property and the compiler will automatically make the smallest structure for your renderer that contains all of the necessary fields
+
+  -Steve: I'm not 100% sold on this. I think maybe defining structs and ordering might be optional but possible. Maybe explicitly to allow interop?
+
+Inheritance.  Since we don’t actually pre-declare our object types anywhere, we just use them, how does this work?
+just have declarations “somewhere” that Spotlight inherits Light ?
+
+
+Special Objects
+
+Dictionaries are key-value pairs in curly braces separated by a colon.
+Dict m = {KEY:VALUE, KEY_VALUE};
+m[KEY]=value
+ValType = m[KEY];
+
+Not stretchy object types; not extensible.  Treat like a primitive type.
+
+Geometry
+is just a regular stretchy object that you can modify; the only thing special about it is that you have to pass it to rasterize operations, where it assumes an array of type Vertex called vertices, and an optional array of any integer primitive type called indices.
+
+What do we do about complex types in vertex definitions? vertex.matrixParam is simple just compile to vec4’s or put in SSBO.  But what about  vertex.image? vertex.dict? vertex.function()?
+
+So we have a few possibilities in my opinion here.
+1) You just pass to rasterize an array/iterator for any object type and there’s an optional overload that takes an index buffer.  There is no Geometry type.  You just have array of structs as your vertex definition
+  -(also an optional geometry_type parameter that can be like lines triangles, strips whatever.)
+-I think Geometry can be a part of the standard library though as an abstraction...because you could have triangles in different formats or whatever in different tools but have algorithms that abstract around them.
+-set viewport and scissor as optional params if you want to the rasterize operation.
+
+2)We have the geometry type with special semantic that the stretchiness on Vertex is limited to primitive types only, enforced at compile time.  Raster operations take Geometry type.
+
+Of these two the top one is better because you might have different types of vertices in an application. However that doesn’t resolve our complex types problem.  For now rule that any structure passed to rasterize operations must contain primitive types or structures containing primitive types?

@@ -1,0 +1,136 @@
+Questions
+1) Since we are assuming that we have functions producing image outputs to pass to renderers and since return values can be anything, do we need a “persistent” keyword as discussed before that makes images persistent from frame to frame? eg, as inputs for motion blur?
+
+
+//in cpp code, not RSL
+newFrame = motionBlur(previousFrame)
+
+having the system reuse, eg, pingpong buffers might be harder from c++ code since we’re outside of where the compiler can optimize.  persistent might just let us declare images inside of the module like static variables in c.
+
+
+
+
+on the other hand to optimize this case we could have the generated RSL runtime not free memory until it’s needed, then we see a “register” with the exact type of the pingpong buffer we just released available and we can just reuse it without any allocs or frees
+
+2) Make a ref prefix for variable declarations? Might be nice to save a reference to a variable without copying it.
+
+3) We are doing python style scope for inline function declarations.  Should we have an :: operator to access things in an enclosing scope for globally declared functions?
+
+float ao = module ambientOcclusion()
+{
+  ao = ::material.aoFunction(::vertex);
+}
+
+4) add alias operation for objects types to maximize code interoperability?
+@alias(material.color, material.diffuse_color)
+
+5) allow operator overloading?
+
+6) How do we handle creating images of a type? for example, we have an output framebuffer return value that is semantically the same framebuffer as the original with new geometry rasterized into it
+
+7) How does reading and writing render targets (as opposed to generic arrays, etc) for a rasterization pass work exactly?  This is unclear still.  Working on it.
+
+Render targets in rasterize
+Built-in operations
+image.lookup() (on all image types).  takes a vector argument coord the dimension of the image. takes a number of optional parameters.
+
+COMPARE_MODE
+COMPARE_VALUE
+EDGE_MODE_UV
+EDGE_MODE_U
+EDGE_MODE_V
+FILTER_MODE_U
+FILTER_MODE_V
+FILTER_MODE_UV
+FILTER_MODE_MIPMAP
+
+
+rasterize arguments:
+BLEND_FUNC
+DEPTH_BUFFER // don’t think user should have to program a depth test manually in code.
+COLOR_BUFFER  // for blending stage which is still not programmable
+PRIMITIVE_TYPE //defaults to TRIANGLES
+
+arrays:
+.length
+.append
+.prepend
+.reserve
+.resize
+Notes:
+Need to make sections, writeups for these
+-way to create integer ranges, and iterate over them.
+   For example rasterize for i in 1:1000000 (generate geometry in vertex shader)
+-thread for any aribrary item in any arbitrary range.
+
+SOLVED:
+Syntax for for loops is ‘for(’ <var> ’in’ <uint expression> (’,’ <var> ’in’ <uint expression>)+’)’
+
+the uint expression must ALWAYS be an unsigned type.  It declares a parallel iteration over the types from 0 to the value of the expresssion inclusive.  Compiler may make iteration non-parallel if it has a hard time parallizing the loop, or seqfor which is ALWAYS sequential.
+
+This allows you to iterate over ranges with arithmetic based on the base iteration, or iterate over containers and images with indexing.  Always works and is stupid simple.
+
+
+-make a write up for rasterize / control flow operations.
+  -rasterize isn’t just over vertices; geometry rasterization should make a vertex shader
+  YES.
+
+
+  -need a way to handle accessing image’s mipmaps as an image; pass mip 0 as a write target to a raster operation : This can be done with image.write and image.lookup as optional params.
+
+Texture operator+=
+Texture operator+
+
+Stencil, tessellation, geometry, compute will be conveniently left out of this first draft
+
+counters and queries? actually important to at least have raster queries
+
+Here’s an example code I wrote.  It doesn’t use rasterize, it’s just image processing to a texture.   NOTE: not canonical
+
+
+module prepareframe(image2d<uchar3> camimage,image2d<uchar> mask,float threshold=10)->(image2d<float4> output)
+{
+    for(x in camimage.width,y in camimage.height)
+    {
+      float4 out;
+      if(mask[x,y])
+      {
+        out[x,y]=float4(camimage[x,y],1.0);
+      }
+      else
+      {
+        out[x,y]=float4(0.0f,0.0f,0.0f,-1.0f);
+      }
+    }
+}
+
+module iterate(image2d<float4> src,float3x3 Kernel)->(image2d<float4> dst)
+{
+    for(x in src.width,y in src.height)
+    {
+      float4 out=src[x,y];
+      if(out[3] < 0.0)
+      {
+        out=float4(0.0f,0.0f,0.0f,0.0f);
+        for(kx in 3,ky in 3) //this loop might not parallelize.  In fact, I could/should make this a seqfor .
+        {
+          out+=dst[x+kx-1,y+ky-1]*Kernel[kx,ky];
+        }
+        out[3]=-1.0f;
+      }
+      dst[x,y]=out;
+    }
+}
+
+module fillholes(image2d<uchar3> camimage,image2d<uchar> mask)->(image2d<float4> out)
+{
+    static image2d<float4> buf1,buf2;
+    float3x3 K={0.0f,.25f,0.0f,.25f,0.0f,.25f,0.0f,0.25f,0.0f};
+    buf1=prepareframe(camimage,mask); //alternate function call syntax f(args)->(outputs);//the expression version is valid if there's only one
+    seq(iter in 100)
+    {
+      buf2=iterate(buf1,K);
+      swap(buf1,buf2);
+    }
+    out=buf1;
+}
