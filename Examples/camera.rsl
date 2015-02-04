@@ -1,0 +1,16 @@
+[mat4 lightMat] = lightCameraMatrixMVP(Light l)
+{
+#todo
+}
+
+[float4x4] cameraMatrix()
+{
+
+}
+
+#can be compiled to shader code or cpu code depending if subexpression
+#includes fragment or vertex specific data
+[vec4 vecpos] = module standard_mvp(Vec4 posinput, Matrix4x4 user)
+{
+  vecpos = user * posinput;
+}

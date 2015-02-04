@@ -1,0 +1,58 @@
+
+module standard_mvp(Vec4 posinput, Matrix4x4 user)->(Vec4 vecpos)
+{
+  vecpos = user * posinput;
+}
+
+module shadowmap_fragment(Vec4 wspos, LightSource ls) -> (float32[3] colorout)
+{
+  colorout = mag(ls - wspos);
+}
+
+module lighting(Vec4 posin, Vec4 wspos, LightSource[] ls, Frame<float32[3]> shadowmap)
+->(uint8[3] colorout)
+{
+  colorout = ls.color * ls.
+}
+
+module shadowmap (Geometry scene, Matrix4x4 user, LightSource[] sources)
+->(Frame<uint8> visibility_out[])
+{
+  for(int si in 0 : sources.length)
+  {
+    Matrix4x4 lsmat = lookat(sources[i], scene.center);
+    Frame<Float32[3]> lsdistance;
+
+    rasterize(Vertex v in scene, lsdistance)
+    {
+      vertex:
+        Vec4 pos = standard_mvp(v.position, lsmat);
+        vertex = pos;
+
+      fragment:
+        fragment = mag (v.positon.xyz - sources[i].position.xyz);
+    }
+
+    rasterize (Vertex v in scene, visibility_out[si])
+    {
+        vertex :
+          Vec4 pos = standard_mvp(v.projection, user);
+          vertex = pos;
+        fragment:
+          Vec3 dist = lsdistance.lookupfilter(lsmat*pos);
+          fragment = (dist>= mag(v.position.xyz - sources[i].position.xyz)) ? 1.0 : 0.0;
+    }
+  }
+}
+
+#Should just be a scripting language where everything is defined inline and
+#the compiler builds a CPU/GPU task graph
+#data is just data, and parts of the data that get accessed by modules get automatically
+#uniformed or varying-ed
+#separate fetch / position shader versus vertex shader
+#matlab style return values might be useful for MRT's, or transform feedback
+
+#blend modes? depth? blend shader?
+#needs to be able to interact with consecutive frames, data generated outside of RSL
+#
+#material.getNormal();.  everything should be data based

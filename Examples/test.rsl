@@ -1,0 +1,86 @@
+#way to create return values with params, eg, returning the depth value
+#way to write into existing depth values
+#way to write out color values
+
+import camera.rsl;
+import normals.rsl;
+
+[float4x4 shadowMat] = makeShadowMatrix(Light light, float4x4 objectMatrix = float4x4::identity)
+{
+  float4x4 scaleBias = float4x4(
+                                float4(.5,0,0,0),
+                                float4(0,.5,0,0),
+                                float4(0,0,.5,0),
+                                float4(.5,.5,.5,1.0)
+                              );
+
+  ##****make light proj, light view
+
+  float4x4 lightMVP = lightProj * lightView * objectMat;
+
+  shadowMat = scaleBias * lightMVP;
+}
+
+
+[float pcf] = module shadowmap_fragment(Image2D shadowmap,
+                                        float4x4 shadowMatrix,
+                                        vec4 objectPos)
+{
+  float4 coords = shadowMatrix * objectPos;
+  coords/= coords.w;
+
+  sampleParams = {FILTER_MODE : LINEAR, COMPARE_MODE : LEQUAL, COMPARE_VALUE : coords.z};
+
+  pcf = shadowmap.lookup(coords.st, sampleParams);
+}
+
+
+[Image2D depth] = module make_shadowmap(DrawList scene, Mat4x4 lsmat)
+{
+  Dict rasterParams = {DEPTH_BUFFER : depth};
+
+  rasterize (Vertex v in scene, **rasterParams)
+  {
+    vertex:
+      Vec4 pos = standard_mvp(v.position, lsmat);
+      vertex = pos;
+  }
+}
+
+
+[Image2D depth] = module make_shadowmap(DrawList scene, LightSource light)
+{
+  depth = make_shadowmap(scene, lightCameraMatrixMVP(light));
+}
+
+
+#material is just an "object" type whose fields will be set at compile & link time based on all the visible instances
+[uint8[3] colorout] module phong_lighting_shadows(Vec4 posin,
+                                                  Vec4 wspos,
+                                                  Material mat,
+                                                  LightSource[] shadowedLights,
+                                                  Image[] shadowMaps,
+                                                  LightSource[] unshadowedLights)
+{
+  float4 colorambient = ambient_occlusion(material) * ambient();
+
+  float4 colorshadowed = 0;
+  for(int i =0 ; i < shadowedLights.size; i++)
+  {
+    float occlusion = shadowmap_fragment(*****);
+    colorshadowed +=  (diffuse(l) + specular(l)) * occlusion;
+  }
+
+  float4 colorunshadowed =0;
+  for(int i = 0; i < unshadowedLights.size(); i++)
+  {
+    colorunshadowed +=  (diffuse(l) + specular(l));
+  }
+
+  colorout = colorshadowed + colorunshadowed + colorambient;
+}
+
+
+[] = export module forwardRenderer(DrawList scene, LightSource[] light, Camera camera)
+{
+}

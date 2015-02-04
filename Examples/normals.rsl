@@ -1,0 +1,9 @@
+[vec3 normal] = module getNormal(vertex)
+{
+  normal = vertex.normal;
+}
+
+[vec3 normal] = module normalMap()
+{
+  ##implementation
+}
