@@ -1,0 +1,185 @@
+examples :
+- indexed mesh rendering vs non indexed mesh rendering
+- convolution
+- convolution with fft stl call
+- terrible matrix math one
+- MRT deferred rendering
+- MRT voxelization
+- Forward+ Renderer
+- Particle system
+- Virtual Texture
+- example of integration code
+- KTF viewer - runtime glsl
+
+render_ktf=func(target,geometry,buffer<func> vertexshader)
+{
+
+}
+
+export render_ktf;
+
+c++ utlility lib just extracts the funciton objects that can be passed to rasterize
+
+
+arrays vs buffers as types
+arraysyn [64];
+buffer is a first class low level type.
+buffer<Light> bname(varSize);
+
+buffer<LightGrid, dims=2> bname(varSize);
+
+Image //takes arbitrary structs and dimensions (1,2,3, CUBE), can make arrays
+ImageCube is syntactic suagar
+Image2D could be the same even.  not necessarily tho
+Buffer
+
+//cube
+
+
+// for is || by default
+for (i:1024, j:24, ....) //unsigned int only
+{
+		img[i][j] = 10;
+}
+
+// alternative syntax
+for (t : (1024,1024,1024))
+{
+}
+
+// which allows
+for (t : img.size, level:4 )
+{
+}
+
+// which is equivalent to semantically
+for (i:t[0], j:t[1], k:t[2], level:4)
+{
+}
+
+foreach (eg containers) could be sugar on this ^^
+
+use "sequential keyword" for sequential for loops
+mutable to make things not const by default
+
+triangles(buffer.begin(), buffer.end(), ..)
+lines (buffer.begin(), buffer.end(), state...)
+
+rasterize (mode= triangles, count = 1,252,242)
+{
+
+}
+
+first order function and closure support
+named argument syntax
+
+buffer<VertData> vertices;
+float[4][4] M;
+rasterize(target=RT, mode=triangles,count=1000000
+	vs=func(index i)->(VertData v) {
+		v.position=M*vertices[i];
+	}
+	fs=Required
+	ts=None
+	gs=None
+) -> (RT);
+
+/// no shader stages - this would essentially mandate that the entire fucking thing is a CS with a post rasterizer
+/// possible future extension, and i enjoy the theoretical purity
+for (i:1000000)
+{
+	rasterize(mode: triangles, verts[indices[i]], ....)
+}
+
+
+///indices = (buffer.begin,buffer.end())
+
+)
+
+struct FBData
+{
+	rgb8 color;
+	float3 normal;
+};
+
+
+col = parmOfPos1;
+normal = paramOfPos1_b;
+
+Framebuffer <FBData>(800,600);
+
+export class Renderer
+{
+	otherFunction -> Image<FBData>
+	{
+
+	}
+
+	export renderMain()
+	{
+
+	}
+};
+
+possible hint keyword "cache" or "local" to indicate local memory to compiler
+
+operator overloading use python syntax
+
+STL contains linear algebra + FFT in standard library
+
+float[3] light;
+double[3] eye;
+
+double diffuse=dot(light,eye);
+
+T1 = k;
+
+//try this out writing examples
+dot=func<T1,T2,T3>(T1 t1,T2 t2)->(T3 r)
+{
+   T3 out=0.0;
+   sequential for(i=t1.length)
+   {
+       out+=t1[i]*t2[i];
+   }
+   r=out;
+};
+
+/*Light=struct
+{
+	vec3 position;
+	vec3 intensity;
+};*/
+
+Light = struct inherits Light { float BEEEEEAAM;};
+
+if(Light defined)
+
+import chris_renderer; //expects global light object in namespace
+
+export Light;
+
+export dot;
+
+- linear algebra compositions, etc should ideally be a standard library - however, reimplementing all of eigen in CS is hard so...
+- fft, (fsht) -
+@glsl(uniform(rslbuffer, "glsluniform")){}
+@hlsl{}
+@cg{}
+
+@cpp
+{
+
+}
+
+// eliminate function declaration
+thing=func()->() {}
+vertextype=struct()
+
+thingname=thingtype[<compileargs>]* (runargs) [{block}] ;
+
+
+
+- it was a big deal to me to not have to worry about mrt's or multiple render passes if possible
+- i remember talking something about function parameters - inout
+- no synchronization primitives in the language itself.
