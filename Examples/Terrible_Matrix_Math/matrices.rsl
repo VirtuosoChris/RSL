@@ -16,7 +16,11 @@ module Renderer
 	};
 
 	// the image2D can be created in the C++ program with the window dimensions, then passed in.
-	func HelloRSL (Image2D<Pixel> renderTargetIn) ->(Image2D<Pixel> renderTargetOut)
+	func HelloRSL (Image2D<Pixel> renderTargetIn
+					float[4][4] modelMatrix,
+					float[4][4] cameraMatrix,
+					float[4][4] projectionMatrix
+	) ->(Image2D<Pixel> renderTargetOut)
 	{
 		Image2D<Pixel> clearTarget = renderTargetIn.clear({0, 0, 0xff});
 
@@ -38,10 +42,7 @@ module Renderer
 		};
 
 		//  First argument, compiletime, maps to gl_Position imho, regardless of name
-		func HelloVS(index idx,
-					float[4][4] modelMatrix,
-					float[4][4] cameraMatrix,
-					float[4][4] projectionMatrix) -> (float[4] POSITION, float[3] col) // My preference is that the first output argument positionally maps to gl_Position, compile error if it can't be mapped
+		func HelloVS(index idx) -> (float[4] POSITION, float[3] col) // My preference is that the first output argument positionally maps to gl_Position, compile error if it can't be mapped
 		{
 			POSITION = projectionMatrix * cameraMatrix * modelMatrix * {vertices[idx].position, 1.0};
 			col = vertices[idx].color;
