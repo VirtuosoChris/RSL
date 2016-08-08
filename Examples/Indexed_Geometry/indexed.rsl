@@ -1,5 +1,11 @@
-/// Hello World RSL program.  Just draw some triangles!
-
+/// Hello World RSL program, modified to pass two RSL buffer objects in to the render function.
+/// The actual vertex shader changes very little; there's an indirect lookup using the value pulled from the index buffer
+/// The fact that the vertices are passed in from the program rather than hard coded in a constant buffer makes no difference,
+/// other than having to export the Vertex struct so it's visible to the C++ code.
+/// This code assumes that the buffers passed in contain a single model to be rendered in a single draw call.
+/// There's no "binding" of vertex or index buffers.  None of that has any special semantics.  Buffers are buffers to RSL.
+/// The optimizing compiler may or may not generate API calls based on the type or contents of the buffer,
+/// but the programmer doesn't have to worry about it.
 module Renderer
 {
 	struct Vertex
@@ -14,39 +20,20 @@ module Renderer
 	};
 
 	// the image2D can be created in the C++ program with the window dimensions, then passed in.
-	func HelloRSL (Image2D<Pixel> renderTargetIn) ->(Image2D<Pixel> renderTargetOut)
+	func HelloRSL (Image2D<Pixel> renderTargetIn
+					Buffer <unsigned int> indices,
+					Buffer <Vertex> vertices,
+					) ->(Image2D<Pixel> renderTargetOut)
 	{
-		// "pure" constness doesn't map directly to actual graphics practice.  see here, our framebuffer.
-		// this is what the "persistent" thing was earlier.
-		// would require runtime check comparing input and output arguments...
-		// tabled for now
-
 		//create a render target cleared to blue
 		Image2D<Pixel> clearTarget = renderTargetIn.clear({0, 0, 0xff});
-
-		Vertex vertices[3] = {
-			{
-				{-1.0, -1.0, 0.0},		//this works because C++ style struct coercion to array args.
-				{1.0, 0.0, 0.0}
-			},
-
-			{
-				{1.0, -1.0, 0.0},
-				{0.0, 1.0, 0.0}
-			},
-
-			{
-				{1.0, 1.0, 0.0},
-				{0.0, 0.0, 1.0}
-			}
-		};
 
 		//  First argument, compiletime, maps to gl_Position imho, regardless of name
 		func HelloVS(index idx) -> (float[4] POSITION, float[3] col) // My preference is that the first output argument positionally maps to gl_Position, compile error if it can't be mapped
 		{
 			//Imho vertices is pulled in via scoping, yeah.  First class functions.
 
-			POSITION = {vertices[idx].position, 1.0};
+			POSITION = {vertices[indices[idx]].position, 1.0};
 			col = vertices[idx].color;
 		};
 
@@ -61,7 +48,7 @@ module Renderer
 			renderTarget = clearTarget, // sugar for readTarget = RT, writeTarget = RT,
 			viewport = clearTarget.rect(), // should just autocomplete to this if not specified...not autocomplete, but default argument
 			mode = TRIANGLES,
-			count = length(vertices)		//if HelloVS is just a single index in, then count alone.  If HelloVS needs other args (compiletime) then rasterize requires other args.
+			count = length(indices)		//if HelloVS is just a single index in, then count alone.  If HelloVS needs other args (compiletime) then rasterize requires other args.
 			cullFace = BACK
 			vs = helloVS,
 			fs = helloFS,
@@ -72,6 +59,7 @@ module Renderer
 	export HelloRSL;
 	export Pixel;
 	export renderTarget;
+	export Vertex;
 };
 
 export Renderer;

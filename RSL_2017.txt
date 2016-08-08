@@ -1,5 +1,4 @@
 examples :
-- indexed mesh rendering vs non indexed mesh rendering
 - convolution with fft stl call
 - MRT deferred rendering
 - MRT voxelization
@@ -10,6 +9,10 @@ examples :
 - KTF viewer - runtime glsl
 - transform feedback
 - shadow map
+- show that convolution example works 1,2,3d, any kind of kernel data
+- separable gaussian filter example
+
+What does rasterize in a for loop mean ? a non sequential for loop ?
 
 render_ktf=func(target,geometry,buffer<func> vertexshader)
 {
