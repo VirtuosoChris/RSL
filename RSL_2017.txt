@@ -1,8 +1,6 @@
 examples :
 - indexed mesh rendering vs non indexed mesh rendering
-- convolution
 - convolution with fft stl call
-- terrible matrix math one
 - MRT deferred rendering
 - MRT voxelization
 - Forward+ Renderer
