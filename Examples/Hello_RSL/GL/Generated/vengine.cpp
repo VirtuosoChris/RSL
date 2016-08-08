@@ -7,12 +7,99 @@ namespace vrender
 	// export module Renderer in rsl code
 	namespace Renderer
 	{
+
+		namespace
+		{
+			struct Hello_RSL_INTERNAL
+			{
+				// the vs, fs in HelloRSL are compile time constants so a single program can be created once.
+				gl::Program HelloRSL_Prog0;
+				gl::Framebuffer HelloRSL_Prog0_FB0;
+
+				const std::string& HelloRSL_Prog0_VS =
+				R"STRING(
+
+					struct Vertex
+					{
+						vec3 position;
+						vec3 color;
+					};
+
+					///\todo this would actually be input and output blocks
+					out vec3 col;
+
+					void main()
+					{
+						// small constant buffer, compiler can fold into vs source
+						const Vertex vertices[3] =
+						{
+							{
+								vec3(-1.0, -1.0, 0.0),		//this works because C++ style struct coercion to array args.
+								vec3(1.0, 0.0, 0.0)
+							},
+
+							{
+								vec3(1.0, -1.0, 0.0),
+								vec3(0.0, 1.0, 0.0)
+							},
+
+							{
+								vec3(1.0, 1.0, 0.0),
+								vec3(0.0, 0.0, 1.0)
+							}
+						};
+
+						///\todo, not every output api has support for gl_VertexID
+						gl_Position = vec4(vertices[gl_VertexID].position, 1.0);
+						col = vertices[gl_VertexID].color;
+					}
+
+				)STRING";
+
+				const std::string& HelloRSL_Prog0_FS =
+				R"STRING(
+
+					///\todo this would actually be input and output blocks
+					out vec3 outcol;
+					in vec3 col;
+
+					void main()
+					{
+						outcol = col;
+					}
+
+				)STRING";
+
+				Hello_RSL_INTERNAL() :
+					HelloRSL_Prog0( rsl::GLSLProgramWithVsFS(HelloRSL_Prog0_VS, HelloRSL_Prog0_FS))
+				{
+
+				}
+
+			};
+		}
+
 		// export func HelloRSL
 		Image2D<Pixel> HelloRSL (const Image2D<Pixel>& renderTargetIn)
 		{
-
 			// generated OpenGL code
-			
+			static ::Hello_RSL_INTERNAL _internal;
+
+			// since the gl state machine could be changed outside the module, set all the RSL default state values on entry.
+			///\todo should be able to have a begin frame render state and end frame render state hint, for sane developers
+			/// who aren't arbitrarily fucking the graphics state?
+			/// shouldn't matter for non GL anyway.
+			rsl::setDefaultGLState();
+
+			glEnable(GL_CULL_FACE);
+
+			_internal.HelloRSL_Prog0.Use();
+
+			// output images need to be bound to a framebuffer
+			_internal.HelloRSL_Prog0_FB0.Bind(); ///todo
+			_internal.HelloRSL_Prog0_FB0.Texture2D(); ///todo
+
+			glDrawArrays(GL_TRIANGLES, 0, 3);
 		}
 	}
 }
