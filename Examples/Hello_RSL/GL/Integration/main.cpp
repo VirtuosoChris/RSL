@@ -2,7 +2,7 @@
 /// The generated renderer is called like a regular function.
 
 #include <GLFW/glfw3.h>
-#include <RSL/runtime.h>
+#include <RSL/gl_runtime.h>
 #include "vrender.h" // the generated rsl code
 
 const unsigned int resWidth = 1440;
@@ -47,14 +47,14 @@ int main(void)
 
     glfwSwapInterval(1);
 
-    rsl::Image2D<vengine::Pixel> framebuffer(resWidth, resHeight);
+    rsl::Image2D<vengine::Renderer::Pixel> framebuffer(resWidth, resHeight);
 
     while (!glfwWindowShouldClose(window))
     {
         // func HelloRSL (Image2D<Pixel> renderTargetIn) ->(Image2D<Pixel> renderTargetOut)
         // if the module returns more than one argument, the compiler generates type HelloRSL_Return as a struct.
         // if there's one return argument, it should just be the expected return type
-        framebuffer = vengine::HelloRSL(framebuffer);
+        framebuffer = vengine::Renderer::HelloRSL(framebuffer);
 
         ///image needs to be compatible with presentable format.  (eg, less than 4 elements)
         ///we have the minor inefficiency here that RSL will be headless, then we have a built in screen quad or copy pixels

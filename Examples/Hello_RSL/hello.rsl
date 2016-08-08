@@ -71,7 +71,6 @@ module Renderer
 
 	export HelloRSL;
 	export Pixel;
-	export renderTarget;
 };
 
 export Renderer;
