@@ -1,0 +1,13 @@
+func convolve<type Filter2D>(Image2D<float3> input,Filter2D f)->(Image2D<float3> output)
+{
+	output=input;
+	for(uv:input.size)
+	{
+		float3 result={0.0,0.0,0.0};
+		sequential for(st:f.size)
+		{
+			result+=input[uv+st-f.size/2]*f[st];
+		}
+		output[uv]=result;
+	}
+}
