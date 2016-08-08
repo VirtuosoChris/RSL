@@ -54,7 +54,7 @@ int main(void)
         // func HelloRSL (Image2D<Pixel> renderTargetIn) ->(Image2D<Pixel> renderTargetOut)
         // if the module returns more than one argument, the compiler generates type HelloRSL_Return as a struct.
         // if there's one return argument, it should just be the expected return type
-        framebuffer = renderReturn = vengine::HelloRSL(framebuffer);
+        framebuffer = vengine::HelloRSL(framebuffer);
 
         ///image needs to be compatible with presentable format.  (eg, less than 4 elements)
         ///we have the minor inefficiency here that RSL will be headless, then we have a built in screen quad or copy pixels
@@ -67,6 +67,6 @@ int main(void)
 
     glfwDestroyWindow(window);
     glfwTerminate();
-    
+
     exit(EXIT_SUCCESS);
 }
