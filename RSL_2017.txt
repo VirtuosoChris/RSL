@@ -10,6 +10,7 @@ examples :
 - Virtual Texture
 - example of integration code
 - KTF viewer - runtime glsl
+- transform feedback
 
 render_ktf=func(target,geometry,buffer<func> vertexshader)
 {
@@ -19,7 +20,6 @@ render_ktf=func(target,geometry,buffer<func> vertexshader)
 export render_ktf;
 
 c++ utlility lib just extracts the funciton objects that can be passed to rasterize
-
 
 arrays vs buffers as types
 arraysyn [64];
@@ -183,3 +183,5 @@ thingname=thingtype[<compileargs>]* (runargs) [{block}] ;
 - it was a big deal to me to not have to worry about mrt's or multiple render passes if possible
 - i remember talking something about function parameters - inout
 - no synchronization primitives in the language itself.
+
+rasterize :  // should be able to set return argument to null to turn off back end of pipeline...sure.

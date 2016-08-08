@@ -1,77 +1,77 @@
 /// Hello World RSL program.  Just draw some triangles!
 
-struct Renderer
+module Renderer
 {
-	Vertex = struct
+	struct Vertex
 	{
-		float3 position;
-		float3 color;
+		float[3] position;
+		float[3] color;
 	};
 
-	Pixel = struct
+	struct Pixel
 	{
-		rgb8 col;
+		uint8[3] col;
 	};
 
 	// the image2D can be created in the C++ program with the window dimensions, then passed in.
-	HelloRSL = func (Image2D<Pixel> renderTargetIn) ->[Image2D<Pixel> renderTargetOut]
+	func HelloRSL (Image2D<Pixel> renderTargetIn) ->(Image2D<Pixel> renderTargetOut)
 	{
+		// "pure" constness doesn't map directly to actual graphics practice.  see here, our framebuffer.
+		// this is what the "persistent" thing was earlier.
+		// would require runtime check comparing input and output arguments...
+		// tabled for now
+
 		//create a render target cleared to blue
-		Image2D<Pixel> clearTarget = renderTargetIn.clear(rgb8(0, 0, 0xff));
+		Image2D<Pixel> clearTarget = renderTargetIn.clear({0, 0, 0xff});
 
 		Vertex vertices[3] = {
 			{
-				vec3(-1.0, -1.0, 0.0),
-				vec3(1.0, 0.0, 0.0)
+				{-1.0, -1.0, 0.0},		//this works because C++ style struct coersion to array args.
+				{1.0, 0.0, 0.0}
 			},
 
 			{
-				vec3(1.0, -1.0, 0.0),
-				vec3(0.0, 1.0, 0.0)
+				{1.0, -1.0, 0.0},
+				{0.0, 1.0, 0.0}
 			},
 
 			{
-				vec3(1.0, 1.0, 0.0),
-				vec3(0.0, 0.0, 1.0)
+				{1.0, 1.0, 0.0},
+				{0.0, 0.0, 1.0}
 			}
 		};
 
-		// how does this work?  run time or compile time validation that the first argument returned by a vs function
-		// is a vec4 named POSITION?
-		helloVS = func (Index idx) -> [vec4 POSITION, vec3 col] // position is gl_Position, not a varying output.  built in?
+		//  First argument, compiletime, maps to gl_Position imho, regardless of name
+		func HelloVS(index idx) -> (float[4] POSITION, float[3] col) // My preference is that the first output argument positionally maps to gl_Position, compile error if it can't be mapped
 		{
-			// is scoping like python?  where vertices is automatically visible here? it's not an argument.
+			//Imho vertices is pulled in via scoping, yeah.  First class functions.
 
-			POSITION = vec4(vertices[idx].position, 1.0);
+			POSITION = {vertices[idx].position, 1.0};
 			col = vertices[idx].color;
 		};
 
-		//run time or compile time validation that the input arguments to the fs match the arguments output from the vs?
-		//or more generally arguments from previous stage match arguments into next stage.
-		//even gl doesn't have that kind of coercion...
-		//and how would that allow TransFeedback?
-		helloFS = func(vec3 col)-> [Image2D<Pixel> RT]
+		//compile time validation (if possible) that the input arguments to the fs match the arguments output from the vs, yes.
+		//FS output needs to match image pixel type
+		func helloFS(vec3 col)-> (Pixel RT)
 		{
 			RT.col = col;
 		}
 
 		rasterize(
 			renderTarget = clearTarget, // sugar for readTarget = RT, writeTarget = RT,
-			viewport = clearTarget.rect(), // should just autocomplete to this if not specified
+			viewport = clearTarget.rect(), // should just autocomplete to this if not specified...not autocomplete, but default argument
 			mode = TRIANGLES,
-			vertices = vertices.size(), // vs is the only one that should be mandatory I think.
+			count = length(vertices)		//if HelloVS is just a single index in, then count alone.  If HelloVS needs other args (compiletime) then rasterize requires other args.
 			cullFace = BACK
 			vs = helloVS,
 			fs = helloFS,
 			depth = null //another default.
-		) -> RenderTargetOut; // should be able to set return argument to null to turn off back end of pipeline
-
+		) -> renderTargetOut;
 	};
 
 	export HelloRSL;
 	export Pixel;
 	export renderTarget;
-
 };
 
 export Renderer;
