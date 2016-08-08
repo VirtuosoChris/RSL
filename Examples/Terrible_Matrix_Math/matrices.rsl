@@ -1,0 +1,74 @@
+/// Terrible matrix math example.
+/// Here we expect the optimizing compiler to see that the VS's mat * mat * mat arithmetic does not depend on
+/// the varying input index to the vs at all and can therefore be computed in client code.
+
+module Renderer
+{
+	struct Vertex
+	{
+		float[3] position;
+		float[3] color;
+	};
+
+	struct Pixel
+	{
+		uint8[3] col;
+	};
+
+	// the image2D can be created in the C++ program with the window dimensions, then passed in.
+	func HelloRSL (Image2D<Pixel> renderTargetIn) ->(Image2D<Pixel> renderTargetOut)
+	{
+		Image2D<Pixel> clearTarget = renderTargetIn.clear({0, 0, 0xff});
+
+		Vertex vertices[3] = {
+			{
+				{-1.0, -1.0, 0.0},		//this works because C++ style struct coersion to array args.
+				{1.0, 0.0, 0.0}
+			},
+
+			{
+				{1.0, -1.0, 0.0},
+				{0.0, 1.0, 0.0}
+			},
+
+			{
+				{1.0, 1.0, 0.0},
+				{0.0, 0.0, 1.0}
+			}
+		};
+
+		//  First argument, compiletime, maps to gl_Position imho, regardless of name
+		func HelloVS(index idx,
+					float[4][4] modelMatrix,
+					float[4][4] cameraMatrix,
+					float[4][4] projectionMatrix) -> (float[4] POSITION, float[3] col) // My preference is that the first output argument positionally maps to gl_Position, compile error if it can't be mapped
+		{
+			POSITION = projectionMatrix * cameraMatrix * modelMatrix * {vertices[idx].position, 1.0};
+			col = vertices[idx].color;
+		};
+
+		//compile time validation (if possible) that the input arguments to the fs match the arguments output from the vs, yes.
+		//FS output needs to match image pixel type
+		func helloFS(vec3 col)-> (Pixel RT)
+		{
+			RT.col = col;
+		}
+
+		rasterize(
+			renderTarget = clearTarget,
+			viewport = clearTarget.rect(),
+			mode = TRIANGLES,
+			count = length(vertices)
+			cullFace = BACK
+			vs = helloVS,
+			fs = helloFS,
+			depth = null //another default.
+		) -> renderTargetOut;
+	};
+
+	export HelloRSL;
+	export Pixel;
+	export renderTarget;
+};
+
+export Renderer;
