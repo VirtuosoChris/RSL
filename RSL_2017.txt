@@ -9,6 +9,7 @@ examples :
 - example of integration code
 - KTF viewer - runtime glsl
 - transform feedback
+- shadow map
 
 render_ktf=func(target,geometry,buffer<func> vertexshader)
 {
