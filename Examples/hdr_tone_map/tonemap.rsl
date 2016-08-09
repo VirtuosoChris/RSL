@@ -1,0 +1,80 @@
+/// hdr tone map example
+/// Adapted from https://github.com/openglsuperbible/sb6code/blob/master/src/hdrtonemap/hdrtonemap.cpp
+
+module Renderer
+{
+	struct Vertex
+	{
+		float[4] position;
+	};
+
+	struct Pixel
+	{
+		uint8[3] col;
+	};
+
+	// we can initialize image from arrays
+	// globals ok ?
+	Image1D<float> exposureLUT = { 11.0, 6.0, 3.2, 2.8, 2.2, 1.90, 1.80, 1.80, 1.70, 1.70, 1.60, 1.60, 1.50, 1.50, 1.40, 1.40, 1.30, 1.20, 1.10, 1.00};
+
+
+	///\todo what if we don't want to make the image type passed in explicit ?
+	func NaiveTonemap(Image2D<Pixel> renderTargetIn, Image2D<float[3]> hdrImage) ->(Image2D<Pixel> renderTargetOut)
+	{
+
+	}
+
+	///\todo what if we don't want to make the image type passed in explicit ?
+	func ExposureTonemap(Image2D<Pixel> renderTargetIn, Image2D<float[3]> hdrImage) ->(Image2D<Pixel> renderTargetOut)
+	{
+
+	}
+
+	func AdaptiveTonemap (Image2D<Pixel> renderTargetIn, Image2D<float[3]> hdrImage) ->(Image2D<Pixel> renderTargetOut)
+	{
+		//create a render target cleared to blue
+		Image2D<Pixel> clearTarget = renderTargetIn.clear({0.0f, 0.0f, 0.0f, 1.0f});
+
+		Vertex vertices[3] = {
+			{{ 0.75, -0.75, 0.5, 1.0}},
+			{{-0.75, -0.75, 0.5, 1.0}},
+			{{0.75,  0.75, 0.5, 1.0)}}
+		};
+
+		//  First argument, compiletime, maps to gl_Position imho, regardless of name
+		func HelloVS(index idx) -> (float[4] POSITION) // My preference is that the first output argument positionally maps to gl_Position, compile error if it can't be mapped
+		{
+			POSITION = vertices[idx].position;
+		};
+
+		//compile time validation (if possible) that the input arguments to the fs match the arguments output from the vs, yes.
+		//FS output needs to match image pixel type
+		func helloFS()-> (Pixel RT)
+		{
+			//// creating the convention that things like gl_FragDepth, gl_FragCoord, are assumed to be visible in fs scope, with underscore naming convention
+			/// also creating a matlab style array selection syntax
+			float[2] coords = _FragCoord[0:2] / size (textureMap);
+
+			/// what do we do about float -> byte conversions ? assume the same sort of byte is normalized float assumption glsl does ?
+			RT.col = textureMap(coords, filter=BILINEAR)[0:3]; /// take rgb only
+		}
+
+		rasterize(
+			renderTarget = clearTarget, // sugar for readTarget = RT, writeTarget = RT,
+			viewport = clearTarget.rect(), // should just autocomplete to this if not specified...not autocomplete, but default argument
+			mode = TRIANGLES,
+			count = length(vertices)		//if HelloVS is just a single index in, then count alone.  If HelloVS needs other args (compiletime) then rasterize requires other args.
+			cullFace = BACK
+			vs = helloVS,
+			fs = helloFS,
+			depth = null //another default.
+		) -> renderTargetOut;
+	};
+
+	export NaiveTonemap;
+	export AdaptiveTonemap
+	export ExposureTonemap
+	export Pixel;
+};
+
+export Renderer;

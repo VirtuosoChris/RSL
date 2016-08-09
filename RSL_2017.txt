@@ -18,6 +18,10 @@ examples :
 
 the runtime's image types should have a lazily created fbo, that way we can just have "draw into image" as a concept
 
+dynimage is a thing, limited to 1-4 channels .  allows image viewers
+
+exporting templates is illegal. you can export renderer<float>, export renderer<int[3]>; but not wiithout being fully qualified.
+
 
 What does rasterize in a for loop mean ? a non sequential for loop ?
 
