@@ -12,6 +12,13 @@ examples :
 - show that convolution example works 1,2,3d, any kind of kernel data
 - separable gaussian filter example
 
+- image [] operator does direct lookup, can be r/w
+- image() operator is overloaded, can be read only, has named arguments for lookup / coord normalization modes
+- () // coords_normalized=true by default
+
+the runtime's image types should have a lazily created fbo, that way we can just have "draw into image" as a concept
+
+
 What does rasterize in a for loop mean ? a non sequential for loop ?
 
 render_ktf=func(target,geometry,buffer<func> vertexshader)
