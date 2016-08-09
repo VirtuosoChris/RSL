@@ -50,13 +50,18 @@ module Renderer
 		};
 
 		//compile time validation (if possible) that the input arguments to the fs match the arguments output from the vs, yes.
-		//FS output needs to match image pixel type
-		func helloFS()-> (Pixel RT)
+		//FS output needs to match image pixel type.
+		//FS input signature needs to match VS output signature (types only, not names).  All are varyings.
+		func helloFS(float[4] position)-> (Pixel RT)
 		{
 			//// creating the convention that things like gl_FragDepth, gl_FragCoord, are assumed to be visible in fs scope, with underscore naming convention
 			/// also creating a matlab style array selection syntax
-			float[2] coords = _FragCoord[0:2] / size (textureMap);
-
+			float[2] coords = position.xy;
+			
+			//if you want pixel coordinates..
+			float[2] pixel_coordinates=clip2pixel(coords); //OR
+			float[2] pixel_coordinates=clip2pixel(coords,clearTarget);
+		
 			/// what do we do about float -> byte conversions ? assume the same sort of byte is normalized float assumption glsl does ?
 			RT.col = textureMap(coords, filter=BILINEAR)[0:3]; /// take rgb only
 		}
