@@ -18,14 +18,14 @@ module Renderer
 		///note that mipmaps is now an optional argument to an image constructor
 		rval = Image2D<float32[4]>(256,256, mipmaps = 8);
 
-		for (u : size(rval)[0], v : size(rval)[1])
+		for (uv : size(rval))
 		{
-			rval[u][v] =
+			rval[uv] =
 			{
-				(float)((x & y) & 0xFF) / 255.0f,
-	  			(float)((x | y) & 0xFF) / 255.0f,
-	  			(float)((x ^ y) & 0xFF) / 255.0f,
-	  			1.0f;
+				float((uv.x & uv.y) & 0xFF) / 255.0f,
+	  			float((uv.x | uv.y) & 0xFF) / 255.0f,
+	  			float((uv.x ^ uv.y) & 0xFF) / 255.0f,
+	  			1.0f
 			};
 		}
 	}
