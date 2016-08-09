@@ -1,0 +1,103 @@
+@@grammar :: RSL
+
+@@comments :: ?//\*.*?\*//?
+@@eol_comments :: ?///.*?$/?
+
+@@keyword :: if else elseif
+@@keyword :: for sequential rasterize 
+@@keyword :: func class module struct export
+@@keyword :: alias persistent const
+@@keyword :: char short int long
+@@keyword :: uchar ushort uint ulong
+@@keyword :: byte word dword qword oword 
+@@keyword :: float double half
+
+@name
+identifier= /(?!\d)\w+/;
+split_identifier='.'.{identifier}+;
+call_parameter=[identifier '='] expression;
+call_parameters='(' ','.{call_parameter}* ')';
+define_parameters='(' ','.{@+:variable_declaration_initialization}* ')';
+array_index='[' expression ']';
+
+template_call_parameter=[identifier '='](type | expression);
+template_call_parameters='<' ','.{@+:template_call_parameter}* '>';
+template_define_parameters='<' ','.{@+:variable_declaration_initialization}* '>';
+
+type=split_identifier [template_call_parameters] [array_index];
+variable_attribute='persistent' | 'export';
+variable_declaration={variable_attribute}* type identifier;
+variable_declaration_initialization=variable_declaration ['=' expression];
+variable_declaration_construction=variable_declaration call_parameters;
+variable_declaration_statement=(variable_declaration_initialization | variable_declaration_construction) ';' ;
+file={file_statement}*;
+file_statement=import_statement | {module_statement}*;
+import_statement='import' split_identifier;
+module_attribute='export';
+module={module_attribute}* 'module' identifier '{' {module_statement}* '}';
+module_statement=module | {inner_statement}*; 
+class_attribute='export';
+identifier_declaration=identifier [template_define_parameters];
+class=  {class_attribute}* 'class'  identifier_declaration '{' {inner_statement}* '}';
+struct= {class_attribute}* 'struct' identifier_declaration '{' {inner_statement}* '}';
+inner_statement=class | struct | export | alias | variable_declaration_statement | func;
+export='export' type ';';
+alias='alias' type '=' type ';';
+
+func_attribute='export';
+func={func_attribute}* 'func' identifier_declaration define_parameters ['->' define_parameters] '{' {func_statement}* '}';
+func_call=split_identifier [template_call_parameters] [call_parameters];
+
+variable_lvalue=split_identifier [array_index];
+lvalue=variable_lvalue ;
+
+func_statement=control_statement | inner_statement ;
+
+func_call_statement=func_call '->' call_parameters;
+
+control_statement=for | while | if | expression_statement | func_call_statement;
+
+for_attribute='sequential';
+for={for_attribute}* 'for' for_args '{' {control_statement}* '}';
+for_arg=identifier ':' expression;
+for_args='(' ','.{for_arg}+ ')';
+
+while='while' '(' expression ')' '{' {control_statement}* '}';
+if='if' '(' expression ')' '{' {control_statement}* '}' {elseif}* [else];
+elseif='elseif' '(' expression ')' '{' {control_statement}* '}';
+else='elseif' '(' expression ')' '{' {control_statement}* '}';
+
+expression_statement= binary_lvalue_op ';';
+
+binary_lvalue_op = lvalue ( '=' |'+=' | '-=' | '*=' | '%=' | '/=' 
+			  | '<<=' | '>>=' | '|=' | '&=' | '^=') expression ;
+unary_lvalue_op = left_u_lvalue_op | right_u_lvalue_op ;
+left_u_lvalue_op = ('++' | '--') lvalue ;
+right_u_lvalue_op = lvalue ('++' | '--') ;
+
+binary_arith_op = expression ( '+' | '-' | '%' | '^' | '*' | '/' | '&' | '^' | '|' | '>>' | '<<') expression;
+unary_arith_op = ('!' | '~' | '-' | '+') expression;
+binary_comparison_op = expression ('==' | '!=' | '<' | '<=' | '>' | '>=' | '&&' | '||' | '^^') expression;
+ternary_op = expression '?' expression ':' expression ;
+brace_initializer='{' ','.{@+:expression} '}';
+
+expression= ('(' expression ')') | 
+	binary_arith_op | unary_arith_op | 
+	binary_comparison_op | unary_lvalue_op |
+	left_u_lvalue_op | right_u_lvalue_op | 
+	binary_lvalue_op | ternary_op | func_call | 
+	brace_initializer | numeric_constant | variable_lvalue;
+
+numeric_constant=float_constant | integer_constant ;
+integer_constant=hex_constant | binary_constant | octal_constant | decimal_constant;
+hex_constant=/0x[0-9A-Fa-f]+/;
+decimal_constant=/[1-9][0-9]*/;
+binary_constant=/0b[01]+/;
+octal_constant=/0[0-9]*/;
+
+float_constant=decimal_constant '.' [decimal_constant];
+
+start=file;
+
+
+
